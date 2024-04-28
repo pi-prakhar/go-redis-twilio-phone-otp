@@ -1,0 +1,11 @@
+{
+    "service_name" : "GO-PHONE-OTP-SERVICE",
+    "production" : "false",
+    "test-port" : "3000",
+    "test-hostname" : "localhost", 
+    "prod-domain" : "",
+    "otp-timeout" : "30",
+    "otp-lock-time" : "30",
+    "otp-max-trials" : "5",
+    "redis-db-address" : ":6379"
+}
