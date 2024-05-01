@@ -15,9 +15,9 @@ func New() *mux.Router {
 
 	r.HandleFunc("/hello-world", func(w http.ResponseWriter, r *http.Request) {
 		res := response.SuccessResponse[string]{
-			Status:  http.StatusOK,
-			Message: "Successful Response",
-			Data:    "Hello world",
+			StatusCode: http.StatusOK,
+			Message:    "Successful Response",
+			Data:       "Hello world",
 		}
 		res.WriteJSON(w, http.StatusOK)
 		utils.Log.Info("Succesfull Response : Hello World")

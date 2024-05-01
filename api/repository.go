@@ -39,6 +39,25 @@ func getCachedData(key string) (any, error) {
 	}
 }
 
+func getTTLData(key string) (time.Duration, error) {
+	rdb := database.Client(0)
+	ctx := database.Ctx
+	ttl, err := rdb.TTL(ctx, key).Result()
+	if err != nil {
+		utils.Log.Debug("Failed to fetch ttl")
+		return ttl, err
+	}
+	if ttl.Seconds() == -1 {
+		utils.Log.Debug("key does not expire")
+		return ttl, nil
+	} else if ttl.Seconds() == -2 {
+		utils.Log.Debug("Key does not exists")
+		return ttl, nil
+	}
+
+	return ttl, nil
+}
+
 // decrement value of a key from cache
 func decrementValueInCache(key string) error {
 	rdb := database.Client(0)
@@ -65,4 +84,19 @@ func incrementValueInCache(key string) error {
 		utils.Log.Info("Successfully decremented value from cache")
 		return nil
 	}
+}
+
+func deleteDataFromCache(key string) error {
+	rdb := database.Client(0)
+	ctx := database.Ctx
+	err := rdb.Del(ctx, key).Err()
+	if err == redis.Nil {
+		utils.Log.Debug("key not present in cache")
+		return nil
+	}
+	if err != nil {
+		utils.Log.Debug("error deleting data from cache")
+		return err
+	}
+	return nil
 }

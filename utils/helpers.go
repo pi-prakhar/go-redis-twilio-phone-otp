@@ -50,6 +50,22 @@ func GetOTPTimeout() (time.Duration, error) {
 
 }
 
+func GetLockTimeout() (time.Duration, error) {
+	lockTimeoutFromConf, err := loader.GetValueFromConf("otp-lock-timeout")
+	if err != nil {
+		Log.Debug("Failed to load value from conf")
+		return -1, err
+	}
+	lockTimeoutValInt, err := strconv.Atoi(lockTimeoutFromConf)
+	if err != nil {
+		Log.Debug("Failed to convert string to int")
+		return -1, err
+	}
+	lockTimeout := time.Minute * time.Duration(lockTimeoutValInt)
+	return lockTimeout, nil
+
+}
+
 func GetOTPMaxTrials() (int, error) {
 	otpMaxTrialsFromConf, err := loader.GetValueFromConf("otp-max-trials")
 	if err != nil {

@@ -12,7 +12,6 @@ const OTP_CODE = "otp_code"
 const OTP_LOCK = "lock"
 const OTP_TRIAL_LEFT = "otp_trial_left"
 
-// send otp message
 func SendOTPMessage(phoneNumber string, OTPCode string) (string, error) {
 	// _, cancel := context.WithTimeout(context.Background(), appTimeout)
 	// defer cancel()
@@ -33,7 +32,6 @@ func SendOTPMessage(phoneNumber string, OTPCode string) (string, error) {
 	return *res.Sid, nil
 }
 
-// validate otp message
 func ValidateOTPMessage(phoneNumber string, OTPCode string) (bool, error) {
 	key := fmt.Sprintf("%s_%s", phoneNumber, OTP_CODE)
 	cachedOTP, err := getCachedData(key)
@@ -55,8 +53,7 @@ func ValidateOTPMessage(phoneNumber string, OTPCode string) (bool, error) {
 	return true, nil
 }
 
-// store otp in cache
-func StoreOTPInCache(phoneNumber string, OTPCode string) error {
+func SetOTPInCache(phoneNumber string, OTPCode string) error {
 	key := fmt.Sprintf("%s_%s", phoneNumber, OTP_CODE)
 	otpTimeout, err := utils.GetOTPTimeout()
 	if err != nil {
@@ -73,8 +70,7 @@ func StoreOTPInCache(phoneNumber string, OTPCode string) error {
 	return nil
 }
 
-// get otp max tries left
-func OTPTrialsLeft(phoneNumber string) (int, error) {
+func GetOTPTrialsLeft(phoneNumber string) (int, error) {
 	key := fmt.Sprintf("%s_%s", phoneNumber, OTP_TRIAL_LEFT)
 	otpTrialsLeft, err := getCachedData(key)
 
@@ -89,7 +85,6 @@ func OTPTrialsLeft(phoneNumber string) (int, error) {
 	}
 	otpTrialsLeftInt, _ := otpTrialsLeft.(int)
 	return otpTrialsLeftInt, nil
-
 }
 
 func SetMaxOTPTrials(phoneNumber string) (int, error) {
@@ -111,7 +106,6 @@ func SetMaxOTPTrials(phoneNumber string) (int, error) {
 	}
 
 	return otpMaxTrials, nil
-
 }
 
 func GetCachedOTPCode(phoneNumber string) (string, error) {
@@ -129,7 +123,67 @@ func GetCachedOTPCode(phoneNumber string) (string, error) {
 	// otpTrialsLeftInt, _ := otpTrialsLeft.(int)
 	otpCodeString, _ := otpCode.(string)
 	return otpCodeString, nil
-
 }
 
-// check of rate limit
+func SetOTPLock(phoneNumber string, value bool) error {
+	key := fmt.Sprintf("%s_%s", phoneNumber, OTP_LOCK)
+	timeout, err := utils.GetLockTimeout()
+	if err != nil {
+		utils.Log.Debug("Failed to fetch lock timeout")
+		return err
+	}
+	if err := storeInCache(key, value, timeout); err != nil {
+		utils.Log.Debug("Failed to store lock timeout in cache")
+		return err
+	}
+	return nil
+}
+
+func GetOTPLock(phoneNumber string) (bool, int, error) {
+	key := fmt.Sprintf("%s_%s", phoneNumber, OTP_LOCK)
+
+	value, err := getCachedData(key)
+	if err != nil {
+		utils.Log.Debug("Failed to get lock data from cache")
+		return false, -2, err
+	}
+
+	if value == nil {
+		utils.Log.Debug("Failed to get lock data from cache")
+		return false, -2, nil
+	}
+	ttl, err := getTTLData(key)
+
+	if err != nil {
+		utils.Log.Debug("Failed to load ttl from cache")
+		return false, -2, nil
+	}
+	ttlInt := int(ttl.Minutes())
+	valueBool, _ := value.(bool)
+	return valueBool, ttlInt, nil
+}
+
+func DecrementOTPTrials(phoneNumber string) error {
+	key := fmt.Sprintf("%s_%s", phoneNumber, OTP_TRIAL_LEFT)
+	err := decrementValueInCache(key)
+	if err != nil {
+		utils.Log.Debug("Failed to decrement value in cache")
+		return err
+	}
+	return nil
+}
+
+func CleanUp(phoneNumber string) error {
+	otpCodeKey := fmt.Sprintf("%s_%s", phoneNumber, OTP_CODE)
+	otpTrialsLeftKey := fmt.Sprintf("%s_%s", phoneNumber, OTP_TRIAL_LEFT)
+
+	if err := deleteDataFromCache(otpCodeKey); err != nil {
+		utils.Log.Debug("Failed to delete OTP code from cache")
+		return err
+	}
+	if err := deleteDataFromCache(otpTrialsLeftKey); err != nil {
+		utils.Log.Debug("Failed to delete OTP Trials from cache")
+		return err
+	}
+	return nil
+}

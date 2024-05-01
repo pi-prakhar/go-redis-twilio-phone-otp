@@ -6,9 +6,9 @@ import (
 )
 
 type SuccessResponse[T any] struct {
-	Status  int    `json:"code"`
-	Message string `json:"message"`
-	Data    T      `json:"data,omitempty"` // Optional data field
+	StatusCode int    `json:"code"`
+	Message    string `json:"message"`
+	Data       T      `json:"data,omitempty"` // Optional data field
 }
 
 func (sr SuccessResponse[T]) WriteJSON(w http.ResponseWriter, code int) error {
