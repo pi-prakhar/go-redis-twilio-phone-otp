@@ -67,6 +67,18 @@ func SendOTP(w http.ResponseWriter, r *http.Request) {
 		res.WriteJSON(w, http.StatusInternalServerError)
 		return
 	}
+	if otpTrials == -1 {
+		otpTrials, err = SetMaxOTPTrials(data.PhoneNumber)
+	}
+	if err != nil {
+		utils.Log.Info("Failed to set max otp trials")
+		res = response.ErrorResponse{
+			StatusCode:   http.StatusInternalServerError,
+			ErrorMessage: string(err.Error()),
+		}
+		res.WriteJSON(w, http.StatusInternalServerError)
+		return
+	}
 	//send otp send success message
 
 	res = response.SuccessResponse[int]{
@@ -102,6 +114,23 @@ func VerifyOTP(w http.ResponseWriter, r *http.Request) {
 	//	//if trials left - 1 is zero -> error 403max limit reached data lock time(30 min) -> set lock
 	//	//set trials -1
 	//	// error message 403 otp expired trials left
+	cachedOTP, err := GetCachedOTPCode(data.User.PhoneNumber)
+	if err != nil {
+		//TODO : give err response
+		return
+	}
+
+	if cachedOTP == "" {
+		trialsLeft, err := OTPTrialsLeft(data.User.PhoneNumber)
+		if err != nil {
+			//TODO : give err response
+			return
+		}
+		if trialsLeft == 1 {
+
+			//TODO : give err response
+		}
+	}
 	//if otp == otp in cache
 	//	//if trials left - 1 is zero -> error 403max limit reached data lock time(30 min) -> set lock
 	//	//set trials -1
