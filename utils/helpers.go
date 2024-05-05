@@ -3,6 +3,7 @@ package utils
 import (
 	"crypto/rand"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -12,11 +13,14 @@ import (
 	"github.com/pi-prakhar/utils/loader"
 )
 
+const OTP_CODE = "otp_code"
+const OTP_LOCK = "lock"
+const OTP_TRIAL_LEFT = "otp_trial_left"
+
 var validate = validator.New()
 
 //func to verify if phone number is proper or not
 
-// validate body
 func ParseAndValidateBody(r *http.Request, data any) error {
 
 	decoder := json.NewDecoder(r.Body)
@@ -30,21 +34,22 @@ func ParseAndValidateBody(r *http.Request, data any) error {
 		Log.Debug("Error : Failed to validate request json")
 		return err
 	}
-
+	Log.Debug("JSON Body Parsed Successfully")
 	return nil
 }
 
 func GetOTPTimeout() (time.Duration, error) {
 	otpTimeoutFromConf, err := loader.GetValueFromConf("otp-timeout")
 	if err != nil {
-		Log.Debug("Failed to load value from conf")
+		Log.Debug("Error : Failed to fetch otp-timeout from conf")
 		return -1, err
 	}
 	otpTimeoutValInt, err := strconv.Atoi(otpTimeoutFromConf)
 	if err != nil {
-		Log.Debug("Failed to convert string to int")
+		Log.Debug("Error : Failed to convert string to int")
 		return -1, err
 	}
+	Log.Debug("Successfully loaded otp-timeout from conf")
 	otpTimeout := time.Second * time.Duration(otpTimeoutValInt)
 	return otpTimeout, nil
 
@@ -53,7 +58,7 @@ func GetOTPTimeout() (time.Duration, error) {
 func GetLockTimeout() (time.Duration, error) {
 	lockTimeoutFromConf, err := loader.GetValueFromConf("otp-lock-timeout")
 	if err != nil {
-		Log.Debug("Failed to load value from conf")
+		Log.Debug("Error : Failed to load otp-lock-timeout from conf")
 		return -1, err
 	}
 	lockTimeoutValInt, err := strconv.Atoi(lockTimeoutFromConf)
@@ -61,6 +66,7 @@ func GetLockTimeout() (time.Duration, error) {
 		Log.Debug("Failed to convert string to int")
 		return -1, err
 	}
+	Log.Debug("Successfully loaded otp-lock-timeout from conf")
 	lockTimeout := time.Minute * time.Duration(lockTimeoutValInt)
 	return lockTimeout, nil
 
@@ -69,7 +75,7 @@ func GetLockTimeout() (time.Duration, error) {
 func GetOTPMaxTrials() (int, error) {
 	otpMaxTrialsFromConf, err := loader.GetValueFromConf("otp-max-trials")
 	if err != nil {
-		Log.Debug("Failed to load value from conf")
+		Log.Debug("Error : Failed to load otp-max-trials from conf")
 		return -1, err
 	}
 	otpMaxTrialsValInt, err := strconv.Atoi(otpMaxTrialsFromConf)
@@ -77,7 +83,7 @@ func GetOTPMaxTrials() (int, error) {
 		Log.Debug("Failed to convert string to int")
 		return -1, err
 	}
-
+	Log.Debug("Successfully loaded otp-max-trials from conf")
 	return otpMaxTrialsValInt, nil
 
 }
@@ -93,4 +99,16 @@ func CreateOTPString(maxDigits int) string {
 		b[i] = table[int(b[i])%len(table)]
 	}
 	return string(b)
+}
+
+func GetOTPTrialsLeftKey(phoneNumber string) string {
+	return fmt.Sprintf("%s_%s", phoneNumber, OTP_TRIAL_LEFT)
+}
+
+func GetOTPCodeKey(phoneNumber string) string {
+	return fmt.Sprintf("%s_%s", phoneNumber, OTP_CODE)
+}
+
+func GetOTPLockKey(phoneNumber string) string {
+	return fmt.Sprintf("%s_%s", phoneNumber, OTP_LOCK)
 }

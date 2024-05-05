@@ -8,33 +8,44 @@ import (
 	"github.com/pi-prakhar/go-redis-twilio-phone-otp/utils"
 )
 
-// store otp in cache
 func storeInCache(key string, value any, expiry time.Duration) error {
 	rdb := database.Client(0)
 	ctx := database.Ctx
 
 	err := rdb.Set(ctx, key, value, expiry).Err()
 	if err != nil {
-		utils.Log.Debug("Failed to store data in cache")
+		utils.Log.Debug("Error : Failed to store data in cache")
 		return err
 	}
-	utils.Log.Info("Successfully Stored data in cache")
+	utils.Log.Debug("Successfully Stored data in cache")
 	return nil
 }
 
-// get data from cache
+func storeInCacheNoExpiry(key string, value any) error {
+	rdb := database.Client(0)
+	ctx := database.Ctx
+
+	err := rdb.Set(ctx, key, value, 0).Err()
+	if err != nil {
+		utils.Log.Debug("Error : Failed to store data with no expiry in cache")
+		return err
+	}
+	utils.Log.Debug("Successfully Stored data with no expiry in cache")
+	return nil
+}
+
 func getCachedData(key string) (any, error) {
 	rdb := database.Client(0)
 	ctx := database.Ctx
 	cachedData, err := rdb.Get(ctx, key).Result()
 	if err == redis.Nil {
-		utils.Log.Debug("Key not present in cache")
+		utils.Log.Debug("Data not present in cache")
 		return nil, nil
 	} else if err != nil {
-		utils.Log.Debug("Failed to get value from cache")
+		utils.Log.Debug("Error : Failed to fetch data from cache")
 		return nil, err
 	} else {
-		utils.Log.Info("Key is present in cache")
+		utils.Log.Debug("Successfully fetched data from cache")
 		return cachedData, nil
 	}
 }
@@ -44,46 +55,18 @@ func getTTLData(key string) (time.Duration, error) {
 	ctx := database.Ctx
 	ttl, err := rdb.TTL(ctx, key).Result()
 	if err != nil {
-		utils.Log.Debug("Failed to fetch ttl")
+		utils.Log.Debug("Error : Failed to fetch ttl from cache")
 		return ttl, err
 	}
 	if ttl.Seconds() == -1 {
-		utils.Log.Debug("key does not expire")
+		utils.Log.Debug("Key does not expire")
 		return ttl, nil
 	} else if ttl.Seconds() == -2 {
-		utils.Log.Debug("Key does not exists")
+		utils.Log.Debug("Error : Key does not exists")
 		return ttl, nil
 	}
-
+	utils.Log.Debug("Successfully fetched ttl from cache")
 	return ttl, nil
-}
-
-// decrement value of a key from cache
-func decrementValueInCache(key string) error {
-	rdb := database.Client(0)
-	ctx := database.Ctx
-	err := rdb.Decr(ctx, key).Err()
-	if err != nil {
-		utils.Log.Debug("Failed to decrement value from cache")
-		return err
-	} else {
-		utils.Log.Info("Successfully decremented value from cache")
-		return nil
-	}
-}
-
-// increment value of a key from cache
-func incrementValueInCache(key string) error {
-	rdb := database.Client(0)
-	ctx := database.Ctx
-	err := rdb.Incr(ctx, key).Err()
-	if err != nil {
-		utils.Log.Debug("Failed to decrement value from cache")
-		return err
-	} else {
-		utils.Log.Info("Successfully decremented value from cache")
-		return nil
-	}
 }
 
 func deleteDataFromCache(key string) error {
@@ -95,8 +78,22 @@ func deleteDataFromCache(key string) error {
 		return nil
 	}
 	if err != nil {
-		utils.Log.Debug("error deleting data from cache")
+		utils.Log.Debug("Error : Failed deleting data from cache")
 		return err
 	}
+	utils.Log.Debug("Successfully deleted data from cache")
 	return nil
+}
+
+func decrementValueInCache(key string) error {
+	rdb := database.Client(0)
+	ctx := database.Ctx
+	err := rdb.Decr(ctx, key).Err()
+	if err != nil {
+		utils.Log.Debug("Error : Failed to decrement data in cache")
+		return err
+	} else {
+		utils.Log.Info("Successfully decremented data in cache")
+		return nil
+	}
 }
