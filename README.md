@@ -13,7 +13,7 @@ This project provides a Golang service for sending one-time passwords (OTPs) to 
 1. **Clone the repository:**
 
 ```bash
-git clone https://github.com/your-username/go-redis-twilio-phone-otp.git
+git clone https://github.com/pi-prakhar/go-redis-twilio-phone-otp.git
 ```
 
 2. **Create a `.env` file:**
